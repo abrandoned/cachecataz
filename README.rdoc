@@ -7,7 +7,8 @@ an instance or the class.
 
 == Problem
 
-Cache servers like Memcache only provide expiry for cache keys based on a unique value. 
+Cache servers like Memcache only provide expiry for cache keys based on a unique value.
+Don't allow you to specify an entire namespace to expire based on changes in the underlying data. 
 
 == Solution
 
