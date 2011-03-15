@@ -1,6 +1,7 @@
 class MockModel
   include Cachecataz
   
+  cache_scope :empty
   cache_scope :test, :id
   cache_scope :user, :user_id
   cache_scope :multi, [:id, :user_id]

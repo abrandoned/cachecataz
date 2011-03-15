@@ -1,7 +1,68 @@
 = cachecataz
 
-Description goes here.
+Cachecataz is for namespace expiry in a cache where the cache provider does not enable namespace based expiry (like memcached).
 
+Cachecataz creates a namespace key based on a cache_scope defined for the class.  Each cache namespace can be expired through
+an instance or the class.  
+
+== Problem
+
+Cache servers like Memcache only provide expiry for cache keys based on a unique value. 
+
+== Solution
+
+Store a value in the cache that determines the namespace of the cache key and increment the value of the namespace key each time the 
+namespace needs to be expired.  
+
+= Using Cachecataz
+
+Install it:
+
+  gem install cachecataz
+
+Include it and define your scopes:
+
+  class Element < ActiveRecord::Base
+    include Cachecataz
+    
+    cache_scope :name, [:user_id]
+  end
+  
+A cache_scope is the mechanism to create a unique scope for a namespace.  The namespace key will be comprised of the cache_scope name 
+(in this example "name") and the runtime state of any value passed in the Array of symbols that make up a unique scope.  
+
+For the example above the namespace key would be "name:#{element.user_id}", which allows us to have a unique namespace for each 
+"name" key scoped by the user_id. 
+
+== Example (in Rails)
+
+Basic premise: An Element belongs_to a User and a Widget belongs_to a User as well.  The "something" partial displays data primarily related to 
+the Element but also displays data from the related Widget.  I want to have a sweeper that observes changes in the Widget model and expires the
+namespace for the Element.  (can be kinda confusing, but makes sense in the context of a cache that is model dependent.
+
+Generate a cache key:
+  ** Model **
+  class Element < ActiveRecord::Base
+    include Cachecataz
+    
+    cache_scope :user, [:user_id]
+  end
+  
+  ** View **
+  <% cache(@element.cache_key(:user, :id)) do %>
+    <% render :partial => "something", :locals => { :widget => @element.widget } %>
+  <% end %>
+  
+  ** Observer **
+  class WidgetObserver < ActiveRecord::Observer    
+    after_update(widget)
+      Element.expire_namespace(:user, widget.attributes)  # can also just pass {:user_id => widget.user_id} as the scope_hash, scope requires :user_id
+    end
+  end
+
+== TODO
+  will post more info on how to use cachecataz with a cache that is not Rails.cache (it's very simple), but wanted to get the basics released
+  
 == Contributing to cachecataz
  
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet

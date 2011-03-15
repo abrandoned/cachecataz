@@ -19,6 +19,10 @@ class MockCache
     !!@cache[key]
   end
   
+  def all(action, *args)
+    self.send(action, *args)
+  end
+  
   def clear
     @cache = {}
   end
