@@ -29,6 +29,27 @@ Include it and define your scopes:
     cache_scope :name, [:user_id]
   end
   
+Enable it:
+
+  # ** production.rb **
+  Name::Application.configure do
+    #....... bunch of stuff
+    
+    config.action_controller.perform_caching = true
+    config.cache_store = :mem_cache_store, 'localhost:11211'
+    
+    # .... more stuff
+    
+    config.after_initialize do
+      Cachecataz.enable = true
+      Cachecataz.provider = Rails.cache
+    end
+  end
+  
+
+Cachecataz is disabled by default. If you use it outside of Rails you need to enable it through the configuration options.  Inside Rails this is done
+in your environment files under your Rails.root/config/environments/ dir. 
+  
 A cache_scope is the mechanism to create a unique scope for a namespace.  The namespace key will be comprised of the cache_scope name 
 (in this example "name") and the runtime state of any value passed in the Array of symbols that make up a unique scope.  
 
