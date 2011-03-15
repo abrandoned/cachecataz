@@ -9,6 +9,7 @@ GEM
       rake
     rake (0.8.7)
     rcov (0.9.9)
+    rcov (0.9.9-java)
     rspec (2.3.0)
       rspec-core (~> 2.3.0)
       rspec-expectations (~> 2.3.0)
@@ -19,6 +20,7 @@ GEM
     rspec-mocks (2.3.0)
 
 PLATFORMS
+  java
   ruby
 
 DEPENDENCIES

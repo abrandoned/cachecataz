@@ -60,7 +60,7 @@ For the example above the namespace key would be "name:#{element.user_id}", whic
 
 Basic premise: An Element belongs_to a User and a Widget belongs_to a User as well.  The "something" partial displays data primarily related to 
 the Element but also displays data from the related Widget.  I want to have a sweeper that observes changes in the Widget model and expires the
-namespace for the Element.  (can be kinda confusing, but makes sense in the context of a cache that is model dependent.
+namespace for the Element.  (can be kinda confusing, but makes sense in the context of a cache that is model dependent.)
 
 Generate a cache key:
   # ** Model **
@@ -76,11 +76,24 @@ Generate a cache key:
   <% end %>
   
   # ** Observer **
-  class WidgetObserver < ActiveRecord::Observer    
+  class WidgetObserver < ActiveRecord::Observer
     after_update(widget)
       Element.expire_namespace(:user, widget.attributes)  # can also just pass {:user_id => widget.user_id} as the scope_hash, scope requires :user_id
     end
   end
+  
+  # ** Another Observer **  Why expire_fragment is available? not important
+  class ElementObserver < CacheSweepingObserver
+    after_update(element)
+      expire_fragment(element.cache_key(:user, :id))  # Will only expire a single key "0:user:1/12" if user_id == 1 and id == 12
+    end
+    
+    after_create(element)
+      element.expire_namespace(:user)   # will expire the entire namespace for cache_scope :user for user 1 if user_id ==1
+    end
+  end
+  
+  # by default the scope_hash on any expire_namespace call for an instance is self.attributes
 
 == TODO
 post more info on how to use cachecataz with a cache that is not Rails.cache (it's very simple), but wanted to get the basics released
