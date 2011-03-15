@@ -41,7 +41,7 @@ the Element but also displays data from the related Widget.  I want to have a sw
 namespace for the Element.  (can be kinda confusing, but makes sense in the context of a cache that is model dependent.
 
 Generate a cache key:
-  ** Model **
+  # ** Model **
   class Element < ActiveRecord::Base
     include Cachecataz
     
@@ -53,7 +53,7 @@ Generate a cache key:
     <% render :partial => "something", :locals => { :widget => @element.widget } %>
   <% end %>
   
-  ** Observer **
+  # ** Observer **
   class WidgetObserver < ActiveRecord::Observer    
     after_update(widget)
       Element.expire_namespace(:user, widget.attributes)  # can also just pass {:user_id => widget.user_id} as the scope_hash, scope requires :user_id
@@ -61,7 +61,7 @@ Generate a cache key:
   end
 
 == TODO
-  will post more info on how to use cachecataz with a cache that is not Rails.cache (it's very simple), but wanted to get the basics released
+post more info on how to use cachecataz with a cache that is not Rails.cache (it's very simple), but wanted to get the basics released
   
 == Contributing to cachecataz
  
