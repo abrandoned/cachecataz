@@ -49,10 +49,13 @@ module Cachecataz
     
     api_method = api_args.slice!(0)
     
-    if Config[:api][api_method].respond_to?(:call)
+    case
+    when Config[:api][api_method].respond_to?(:call)
       Config[:api][api_method].call(*api_args)
+    when Config[:provider].respond_to?(Config[:api][api_method])
+      Config[:provider].send(Config[:api][api_method], *api_args)
     else
-      Config[:provider].send(Config[:api][api_method], *api_args)    
+      raise "Unknown method for provider: #{Config[:provider]}"
     end
   end
 
