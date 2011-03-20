@@ -6,17 +6,26 @@ module Cachecataz
   #   config.after_initialize do
   #     Cachecataz.enable = true
   #     Cachecataz.provider = Rails.cache
+  #     Cachecataz.random = false
   #   end
-  Config = {:api => {:get => :read, :set => :write, :incr => :increment, :exist? => :exist?}, 
+  Config = {:api => {:get => :read, :set => :write, :exist? => :exist?}, 
             :enabled => false,
             :ns_delim => ":",
-            :index_delim => "/" }
+            :index_delim => "/", 
+            :random => true }
     
   # Config method to enable Cachecataz
   #
   # @param [Boolean] val
   def self.enable=(val)
     Config[:enabled] = val
+  end
+  
+  # Config method to randomize the seed for namespaces in Cachecataz.  (default to true, the recommended setting)
+  #
+  # @param [Boolean] val
+  def self.random=(val)
+    Config[:random] = val
   end
   
   # Set custom delimiter if desired
@@ -61,8 +70,8 @@ module Cachecataz
 
   # Method that validates the api and provider if they are defined in configuration
   def self.validate_api(api={})
-    unless api.include?(:get) && api.include?(:set) && api.include?(:incr) && api.include?(:exist?)
-      raise "Unknown api methods, define [:get, :set, :incr, :exist?] to use cachecataz with a non-standard provider"
+    unless api.include?(:get) && api.include?(:set) && api.include?(:exist?)
+      raise "Unknown api methods, define [:get, :set, :exist?] to use cachecataz with a non-standard provider"
     end
   end
   
@@ -90,7 +99,7 @@ module Cachecataz
     def cache_point(point_key, scope_hash)
       c_scope = @_point_keys[point_key]   
       c_point = c_scope.inject(point_key.to_s){|s, i| s << Cachecataz::Config[:ns_delim] << (scope_hash[i.to_s] || scope_hash[i]).to_s }
-      Cachecataz[:set, c_point, "0"] if !Cachecataz[:exist?, c_point]
+      Cachecataz[:set, c_point, Cachecataz::Config[:random] ? rand(10000).to_s : "0"] if !Cachecataz[:exist?, c_point]
       return c_point
     end
 
@@ -113,7 +122,7 @@ module Cachecataz
     # @param [Hash] scope_hash the data provider for the scope of the namespace
     def expire_namespace(point_key, scope_hash={})
       c_point = cache_point(point_key, scope_hash)
-      Cachecataz[:incr, c_point]
+      Cachecataz[:set, c_point, (Cachecataz[:get, c_point].to_i + 1 rescue rand(10000)).to_s]
     end
     
     # Class level method to expire all the namespace of cachecataz for a given data provider

@@ -5,6 +5,7 @@ describe MockModel do
     
     before(:all) do
       Cachecataz.enable = false
+      Cachecataz.random = false
     end
     
     it "is disabled on initialization for cache_scope :user" do
@@ -22,6 +23,7 @@ describe MockModel do
     before(:all) do
       Cachecataz.enable = true
       Cachecataz.provider = MockCache.new
+      Cachecataz.random = false
     end
 
     it "returns a namespace key for an empty cache_scope" do
@@ -96,6 +98,7 @@ describe MockModel do
       before(:all) do
         Cachecataz::Config[:provider].clear # not part of api, just an easy way to clear the mock cache
         Cachecataz.delim = ["|", "/"]
+        Cachecataz.random = false
       end
       
       it "returns a namespace key with index for cache_scope :user, :id" do
@@ -111,6 +114,7 @@ describe MockModel do
       before(:all) do
         Cachecataz::Config[:provider].clear  # not part of api, just an easy way to clear the mock cache
         Cachecataz.delim = [":", "|"]
+        Cachecataz.random = false
       end
       
       it "returns a namespace key with index for cache_scope :user, :id" do
@@ -130,6 +134,7 @@ describe MockModel do
                           :set => lambda{ |*args| Cachecataz::Config[:provider].all(:write, *args) }, 
                           :incr => lambda{ |*args| Cachecataz::Config[:provider].all(:increment, *args) }, 
                           :exist? => lambda{ |*args| Cachecataz::Config[:provider].all(:exist?, *args) }}
+        Cachecataz.random = false
       end
   
       it "returns a namespace key for an empty cache_scope" do
