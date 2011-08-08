@@ -6,7 +6,7 @@ module Cachecataz
   #   config.after_initialize do
   #     Cachecataz.enable = true
   #     Cachecataz.provider = Rails.cache
-  #     Cachecataz.random = false
+  #     Cachecataz.random = false  # default "random" is true, and true is recommended
   #   end
   Config = {:api => {:get => :read, :set => :write, :exist? => :exist?}, 
             :enabled => false,
@@ -64,7 +64,7 @@ module Cachecataz
     when Config[:provider].respond_to?(Config[:api][api_method])
       Config[:provider].send(Config[:api][api_method], *api_args)
     else
-      raise "Unknown method for provider: #{Config[:provider]}"
+      raise "Unknown method: #{api_method} for provider: #{Config[:provider]}"
     end
   end
 
