@@ -1,0 +1,115 @@
+= cachecataz
+
+Cachecataz is for namespace expiry in a cache where the cache provider does not enable namespace based expiry (like memcached).
+
+Cachecataz creates a namespace key based on a cache_scope defined for the class.  Each cache namespace can be expired through
+an instance or the class.  
+
+== Problem
+
+Cache servers like Memcache only provide expiry for cache keys based on a unique value.
+Don't allow you to specify an entire namespace to expire based on changes in the underlying data. 
+
+== Solution
+
+Store a value in the cache that determines the namespace of the cache key and increment the value of the namespace key each time the 
+namespace needs to be expired.  
+
+= Using Cachecataz
+
+Install it:
+
+  gem install cachecataz
+
+Include it and define your scopes:
+
+  class Element < ActiveRecord::Base
+    include Cachecataz
+    
+    cache_scope :name, [:user_id]
+  end
+  
+Enable it:
+
+  # ** production.rb **
+  Name::Application.configure do
+    #....... bunch of stuff
+    
+    config.action_controller.perform_caching = true
+    config.cache_store = :mem_cache_store, 'localhost:11211'
+    
+    # .... more stuff
+    
+    config.after_initialize do
+      Cachecataz.enable = true
+      Cachecataz.provider = Rails.cache
+    end
+  end
+  
+
+Cachecataz is disabled by default. If you use it outside of Rails you need to enable it through the configuration options.  Inside Rails this is done
+in your environment files under your Rails.root/config/environments/ dir. 
+  
+A cache_scope is the mechanism to create a unique scope for a namespace.  The namespace key will be comprised of the cache_scope name 
+(in this example "name") and the runtime state of any value passed in the Array of symbols that make up a unique scope.  
+
+For the example above the namespace key would be "name:#{element.user_id}", which allows us to have a unique namespace for each 
+"name" key scoped by the user_id. 
+
+== Example (in Rails)
+
+Basic premise: An Element belongs_to a User and a Widget belongs_to a User as well.  The "something" partial displays data primarily related to 
+the Element but also displays data from the related Widget.  I want to have a sweeper that observes changes in the Widget model and expires the
+namespace for the Element.  (can be kinda confusing, but makes sense in the context of a cache that is model dependent.)
+
+Generate a cache key:
+  # ** Model **
+  class Element < ActiveRecord::Base
+    include Cachecataz
+    
+    cache_scope :user, [:user_id]
+  end
+  
+  ** View **
+  <% cache(@element.cache_key(:user, :id)) do %>
+    <% render :partial => "something", :locals => { :widget => @element.widget } %>
+  <% end %>
+  
+  # ** Observer **
+  class WidgetObserver < ActiveRecord::Observer
+    after_update(widget)
+      Element.expire_namespace(:user, widget.attributes)  # can also just pass {:user_id => widget.user_id} as the scope_hash, scope requires :user_id
+    end
+  end
+  
+  # ** Another Observer **  Why expire_fragment is available? not important
+  class ElementObserver < CacheSweepingObserver
+    after_update(element)
+      expire_fragment(element.cache_key(:user, :id))  # Will only expire a single key "0:user:1/12" if user_id == 1 and id == 12
+    end
+    
+    after_create(element)
+      element.expire_namespace(:user)   # will expire the entire namespace for cache_scope :user for user 1 if user_id ==1
+    end
+  end
+  
+  # by default the scope_hash on any expire_namespace call for an instance is self.attributes
+
+== TODO
+post more info on how to use cachecataz with a cache that is not Rails.cache (it's very simple), but wanted to get the basics released
+  
+== Contributing to cachecataz
+ 
+* Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet
+* Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it
+* Fork the project
+* Start a feature/bugfix branch
+* Commit and push until you are happy with your contribution
+* Make sure to add tests for it. This is important so I don't break it in a future version unintentionally.
+* Please try not to mess with the Rakefile, version, or history. If you want to have your own version, or is otherwise necessary, that is fine, but please isolate to its own commit so I can cherry-pick around it.
+
+== Copyright
+
+Copyright (c) 2011 Brandon Dewitt. See LICENSE.txt for
+further details.
+
